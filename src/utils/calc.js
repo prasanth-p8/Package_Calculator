@@ -1,66 +1,77 @@
 // Calculation logic for package
 
-/**
- * calculatePackage inputs:
- * - people: number
- * - days: number
- * - transport: 'car' | 'bike'
- * - sharing: 3 | 4 (people per room)
- *
- * Returns breakdown: { base, accommodation, transport, total, perPerson }
- */
 export function calculatePackage({
   people = 1,
   days = 1,
   nights = 1,
   transport = "bike",
-  sharing = 1,
-  roomcount = 1,
+  sharing = 3,
   complimentary = "with",
 }) {
-  const BASE_PER_PERSON_PER_DAY = 1000; // base package cost
-  const STAY_PRICE = 2000; // base package cost
-  const COMPLIMENTARY_DISCOUNT =
+  const PROFIT_PER_PERSON_PER_DAY = 500;
+  const BASE_STAY_PRICE = 1000;
+
+  const COMPLIMENTARY =
     complimentary === "with" ? days * 100 + 300 : 0;
+    const Total_COMPLIMENTARY = COMPLIMENTARY * people;
 
-  // accommodation per room per night (group cost); split equally by sharing
-  const ACCOMMODATION_PER_ROOM = sharing === 3 ? 1800 : 1600; // 3-sharing room: 1800/night; 4-sharing: 1600/night
-
-  // transport logic
-
+  // ---------------- TRANSPORT LOGIC ----------------
   let transportCost = 0;
-  let carType = null;
+  let vehicleType = null;
 
   if (transport === "car") {
     if (people <= 4) {
-      carType = "4-seater";
+      vehicleType = "4-seater";
       transportCost = 3000;
-    } else {
-      carType = "6-seater";
+    } else if (people < 8) {
+      vehicleType = "6-seater";
       transportCost = 4000;
     }
   } else if (transport === "bike") {
-    carType = "bike";
+    vehicleType = "bike";
     transportCost = 500;
   } else if (transport === "tempo") {
-    carType = "tempo";
+    vehicleType = "tempo";
     transportCost = 5000;
   }
 
-  const base = people * days * BASE_PER_PERSON_PER_DAY;
+  // ---------------- VEHICLE COST ----------------
+  let vehicleCost = 0;
 
-  // number of rooms needed = ceil(people / sharing)
-  const rooms = Math.ceil(people / sharing);
-  const accommodation = rooms * ACCOMMODATION_PER_ROOM * days;
+  if (vehicleType === "bike") {
+    vehicleCost = transportCost * Math.ceil(people / days);
+  } else {
+    vehicleCost = transportCost * days;
+  }
 
-  const total = base + accommodation + transportCost;
+  // ---------------- ROOM COST ----------------
+  const stayPricePerRoom = BASE_STAY_PRICE * sharing;
+  const roomsRequired = Math.ceil(people / sharing);
+  const roomStayPrice = roomsRequired * stayPricePerRoom * nights;
+
+
+  // ---------------- PROFIT ----------------
+  const profitFromPackage =
+    PROFIT_PER_PERSON_PER_DAY * people * days;
+
+  // ---------------- TOTAL ----------------
+  const total =
+    roomStayPrice +
+    vehicleCost +
+    Total_COMPLIMENTARY +
+    profitFromPackage;
+
   const perPerson = total / people;
+  const priceWithoutComplimentary = total - Total_COMPLIMENTARY;
 
   return {
-    base,
-    accommodation,
-    transport: transportCost,
     total,
     perPerson,
+    profitFromPackage,
+    roomStayPrice,
+    roomsRequired,
+    transport: vehicleCost,
+    vehicleType,
+    priceWithoutComplimentary,
   };
 }
